@@ -231,6 +231,9 @@ class TreeCrushBucket(CrushBucket):
                         self.node_weights.pop()
                     self.num_nodes = new_num_nodes
                 self.size = new_size
+            return 0
+        else:
+            return -1
 
 
 class StrawCrushBucket(CrushBucket):
@@ -312,3 +315,12 @@ class StrawCrushBucket(CrushBucket):
 
         self.set_staw_value(self.size, self.item_weights)
 
+    def remove_bucket_item(self, item):
+        if item in self.items:
+            item_id = self.items.index(item)
+            item_weight = self.item_weights[item_id]
+            self.size -= 1
+            self.weight -= item_weight
+            self.items.remove(item)
+            self.item_weights.remove(item_weight)
+            self.set_staw_value(self.size, self.item_weights)
