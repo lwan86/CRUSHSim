@@ -73,6 +73,12 @@ class UniformCrushBucket(CrushBucket):
         self.weight -= self.item_weight
         return 0
 
+    def adjust_item_weight(self, item, item_weight):
+        diff = (item_weight-self.item_weight)*self.size
+        self.item_weight = item_weight
+        self.weight = self.item_weight*self.size
+        return diff
+
 
 class ListCrushBucket(CrushBucket):
     '''
@@ -127,6 +133,20 @@ class ListCrushBucket(CrushBucket):
         self.weight -= item_weight
         self.size -= 1
         return 0
+
+    def adjust_item_weight(self, item, item_weight):
+        if item in self.items:
+            new_item_weight = item_weight
+            item_id = self.items.index(item)
+            current_item_weight = self.item_weights[item_id]
+            diff = new_item_weight-current_item_weight
+            self.item_weights[item_id] = new_item_weight
+            self.weight += diff
+            for i in range(item_id, self.size):
+                self.sum_weights[i] += diff
+            return diff
+        else:
+            return -1
 
 
 class TreeCrushBucket(CrushBucket):
@@ -235,6 +255,21 @@ class TreeCrushBucket(CrushBucket):
         else:
             return -1
 
+    def adjust_item_weight(self, item, item_weight):
+        if item in self.items:
+            item_id = self.items.index(item)
+            node_id = self.get_node_index(item_id)
+            diff = item_weight - self.node_weights[node_id]
+            self.node_weights[node_id] = item_weight
+            self.weight += diff
+            depth = self.get_tree_depth(self.size)
+            for i in range(1, depth):
+                node_id = self.get_parent_node(node_id)
+                self.node_weights[node_id] += diff
+            return diff
+        else:
+            return -1
+
 
 class StrawCrushBucket(CrushBucket):
     '''
@@ -324,3 +359,17 @@ class StrawCrushBucket(CrushBucket):
             self.items.remove(item)
             self.item_weights.remove(item_weight)
             self.set_staw_value(self.size, self.item_weights)
+            return 0
+        else:
+            return -1
+
+    def adjust_item_weight(self, item, item_weight):
+        if item in self.items:
+            item_id = self.items.index(item)
+            diff = item_weight-self.item_weights[item_id]
+            self.item_weights[item_id] = item_weight
+            self.weight += diff
+            self.set_staw_value(self.size, self.item_weights)
+            return 0
+        else:
+            return -1
