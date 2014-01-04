@@ -16,7 +16,7 @@ class CrushBucket():
         self.id = 0
         self.type = 0
         self.alg = 0
-        self.hash = 0
+        self.hash = None
         self.weight = 0
         self.size = 0
         self.items = []
@@ -36,6 +36,35 @@ class CrushBucket():
             return 'straw'
         else:
             return 'unknown'
+
+    def choose_item_by_rand_perm(self, x, r):
+        pr = r % self.size
+        if self.perm_x != x or self.perm_n == 0:
+            self.perm_x = x
+            if pr == 0:
+                s = self.hash.hash_32_3(x, self.id, 0) % self.size
+                self.perm[0] = s
+                self.perm_n = 0xffff
+                return self.items[s]
+            for i in range(self.size):
+                self.perm[i] = i
+            self.perm_n = 0
+        elif self.perm_n == 0xffff:
+            for i in range(1, self.size):
+                self.perm[i] = i
+            self.perm[self.perm[0]] = 0
+            self.perm_n = 1
+        while self.perm_n <= pr:
+            p = self.perm_n
+            if p < self.size-1:
+                i = self.hash.hash_32_3(x, self.id, p) % (self.size-p)
+                if i:
+                    t = self.perm[p+i]
+                    self.perm[p+i] = self.perm[p]
+                    self.perm[p] = t
+            self.perm_n += 1
+        s = self.perm[pr]
+        return self.items[s]
 
 
 class UniformCrushBucket(CrushBucket):
@@ -78,6 +107,9 @@ class UniformCrushBucket(CrushBucket):
         self.item_weight = item_weight
         self.weight = self.item_weight*self.size
         return diff
+
+    def choose_item(self, x, r):
+        return self.choose_item_by_rand_perm(x, r)
 
 
 class ListCrushBucket(CrushBucket):
@@ -148,6 +180,17 @@ class ListCrushBucket(CrushBucket):
         else:
             return -1
 
+    def choose_item(self, x, r):
+        for i in range(self.size-1, -1, -1):
+            w = self.hash.hash_32_4(x, self.items[i], r, self.id)
+            w &= 0xffff
+            w *= self.sum_weights[i]
+            w = w >> 16
+            if w < self.item_weights[i]:
+                return self.items[i]
+        print('bad list sums for bucket '+str(self.id))
+        return self.items[0]
+
 
 class TreeCrushBucket(CrushBucket):
     '''
@@ -189,6 +232,17 @@ class TreeCrushBucket(CrushBucket):
             return n-(1 << h)
         else:
             return n+(1 << h)
+
+    def get_left_child(self, n):
+        h = self.get_node_height(n)
+        return n-(1 << (h-1))
+
+    def get_right_child(self, n):
+        h = self.get_node_height(n)
+        return n+(1 << (h-1))
+
+    def is_leaf(self, n):
+        return n & 1
 
     def make_bucket(self, hash, type, size, items, item_weights):
         self.alg = 3
@@ -269,6 +323,19 @@ class TreeCrushBucket(CrushBucket):
             return diff
         else:
             return -1
+
+    def choose_item(self, x, r):
+        n = self.num_nodes >> 1
+        while not self.is_leaf(n):
+            w = self.node_weights[n]
+            t = self.hash.hash_32_4(x, n, r, self.id)*w
+            t = t >> 32
+            l = self.get_left_child(n)
+            if t < self.node_weights[l]:
+                n = l
+            else:
+                n = self.get_right_child(n)
+        return self.items[n >> 1]
 
 
 class StrawCrushBucket(CrushBucket):
@@ -373,3 +440,15 @@ class StrawCrushBucket(CrushBucket):
             return 0
         else:
             return -1
+
+    def choose_item(self, x, r):
+        high = 0
+        high_draw = 0
+        for i in range(self.size):
+            draw = self.hash.hash_32_3(x, self.items[i], r)
+            draw &= 0xffff
+            draw *= self.straws[i]
+            if i == 0 or draw > high_draw:
+                high = i
+                high_draw = draw
+        return self.items[high]

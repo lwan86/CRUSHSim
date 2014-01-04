@@ -26,13 +26,13 @@ class CrushRuleMask():
     '''
 
     def __init__(self):
-        self.ruleset = 0
+        self.rule_set = 0
         self.type = 0
         self.min_size = 0
         self.max_size = 0
 
-    def set_rule_mask(self, ruleset, type, min_size, max_size):
-        self.ruleset = ruleset
+    def set_rule_mask(self, rule_set, type, min_size, max_size):
+        self.rule_set = rule_set
         self.type = type
         self.min_size = min_size
         self.max_size = max_size
@@ -51,9 +51,9 @@ class CrushRule():
         self.rule_mask = CrushRuleMask()
         self.rule_steps = []
 
-    def make_rule(self, len, ruleset, type, min_size, max_size):
+    def make_rule(self, len, rule_set, type, min_size, max_size):
         self.len = len
-        self.rule_mask.set_rule_mask(ruleset, type, min_size, max_size)
+        self.rule_mask.set_rule_mask(rule_set, type, min_size, max_size)
 
     def add_rule_step(self, rule_step):
         if len(self.rule_steps) < self.len:
