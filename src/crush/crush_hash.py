@@ -1,7 +1,7 @@
 '''
 Created on Dec 3, 2013
 
-@author: lwan1_000
+@author: lwan1@utk.edu
 '''
 
 class CrushHash():
