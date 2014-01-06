@@ -253,6 +253,7 @@ class TreeCrushBucket(CrushBucket):
         depth = self.get_tree_depth(size)
         self.num_nodes = 1 << depth
         self.items = items
+        self.node_weights = [0]*self.num_nodes
 
         for i in range(size):
             node_id = self.get_node_index(i)

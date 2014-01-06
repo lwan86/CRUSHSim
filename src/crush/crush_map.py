@@ -39,7 +39,8 @@ class CrushMap():
             return -1
 
     def get_next_bucket_id(self):
-        for pos in range(0, self.max_buckets):
+        pos = 0
+        for pos in range(self.max_buckets):
             if not self.crush_buckets or self.crush_buckets[pos] == 0:
                 break
         return -1-pos
@@ -225,21 +226,27 @@ class CrushMap():
         result_len = 0
         for step in range(self.crush_rules[rule_id].len):
             first_n = 0
+            # CRUSH_RULE_TAKE
             if self.crush_rules[rule_id].rule_steps[step].op == 1:
                 w[0] = self.crush_rules[rule_id].rule_steps[step].arg1
                 w_size = 1
+            # CRUSH_RULE_SET_CHOOSE_TRIES
             elif self.crush_rules[rule_id].rule_steps[step].op == 8:
                 if self.crush_rules[rule_id].rule_steps[step].arg1 > 0:
                     total_tries = self.crush_rules[rule_id].rule_steps[step].arg1
+            # CRUSH_RULE_SET_CHOOSELEAF_TRIES
             elif self.crush_rules[rule_id].rule_steps[step].op == 9:
                 if self.crush_rules[rule_id].rule_steps[step].arg1 > 0:
                     leaf_tries = self.crush_rules[rule_id].rule_steps[step].arg1
+            # CRUSH_RULE_SET_CHOOSE_LOCAL_TRIES
             elif self.crush_rules[rule_id].rule_steps[step].op == 10:
                 if self.crush_rules[rule_id].rule_steps[step].arg1 > 0:
                     local_tries = self.crush_rules[rule_id].rule_steps[step].arg1
+            # CRUSH_RULE_SET_CHOOSE_LOCAL_FALLBACK_TRIES
             elif self.crush_rules[rule_id].rule_steps[step].op == 11:
                 if self.crush_rules[rule_id].rule_steps[step].arg1 > 0:
                     local_fallback_tries = self.crush_rules[rule_id].rule_steps[step].arg1
+            # CRUSH_RULE_CHOOSE_FIRSTN or CRUSH_RULE_CHOOSELEAF_FIRSTN
             elif self.crush_rules[rule_id].rule_steps[step].op == 2 or self.crush_rules[rule_id].rule_steps[step].op == 6:
                 first_n = 1
                 if w_size == 0:
@@ -270,6 +277,7 @@ class CrushMap():
                 o = copy.deepcopy(w)
                 w = copy.deepcopy(tmp)
                 w_size = o_size
+            # CRUSH_RULE_EMIT
             elif self.crush_rules[rule_id].rule_steps[step].op == 4:
                 for i in range(w_size):
                     if result_len < result_max:
