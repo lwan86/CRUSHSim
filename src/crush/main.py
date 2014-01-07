@@ -24,6 +24,7 @@ def buckettype_to_number(buckettype):
 def build_crush_map(num_osds, fn):
     layers = []
     f = open(fn, 'r')
+    line_id = 0
     for line in f:
         layer = []
         tmp = line.split()
@@ -31,7 +32,9 @@ def build_crush_map(num_osds, fn):
         layer.append(tmp[1])
         layer.append(int(tmp[2]))
         layers.append(layer)
-    print layers
+        print 'layer '+str(line_id+1)+': '+str(layer)
+        line_id += 1
+    print '*************************************************'
     crush = CrushMap()
     lower_items = []
     lower_weights = []
@@ -95,6 +98,7 @@ def build_crush_map(num_osds, fn):
     rule = CrushRule()
     rule.make_rule(3, rule_set, 1, 2, 2)
     rule_step1 = CrushRuleStep()
+    #print root_id
     rule_step1.set_rule_step(1, root_id, 0)
     rule_step2 = CrushRuleStep()
     rule_step2.set_rule_step(6, 0, 1)
@@ -107,12 +111,22 @@ def build_crush_map(num_osds, fn):
     crush.finalize()
     return crush
 
+def print_crush_map(crush_map):
+    for i in range(crush_map.max_buckets-1, -1, -1):
+        #print i
+        print 'bucket id: '+str(crush_map.crush_buckets[i].id)
+        print 'bucket type: '+crush_map.crush_buckets[i].get_alg_name(crush_map.crush_buckets[i].alg)
+        nnz_items = [j for j in crush_map.crush_buckets[i].items if j != 0]
+        print 'items: '+str(nnz_items)
+        print '********************************************************************************************************'
+
 def main():
     '''
-    build a CRUSH map with 100 osds
+    build a CRUSH map with fixed number of osds
     '''
     num_osds = 100
     crush = build_crush_map(num_osds, 'layers.txt')
+    print_crush_map(crush)
     print 'done!'
 
 if __name__ == '__main__':

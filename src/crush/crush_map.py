@@ -3,7 +3,7 @@ Created on Nov 27, 2013
 
 @author: lwan1@utk.edu
 '''
-import copy
+from copy import deepcopy
 
 class CrushMap():
     '''
@@ -272,10 +272,10 @@ class CrushMap():
                         o[o_size:len(o)] = ret[1]
                         c[o_size:len(c)] = ret[2]
                 if recurse_to_leaf:
-                    o = copy.deepcopy(c)
-                tmp = copy.deepcopy(o)
-                o = copy.deepcopy(w)
-                w = copy.deepcopy(tmp)
+                    o = deepcopy(c)
+                tmp = deepcopy(o)
+                o = deepcopy(w)
+                w = deepcopy(tmp)
                 w_size = o_size
             # CRUSH_RULE_EMIT
             elif self.crush_rules[rule_id].rule_steps[step].op == 4:

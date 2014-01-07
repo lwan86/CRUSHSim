@@ -132,6 +132,7 @@ class ListCrushBucket(CrushBucket):
         self.size = size
         self.items = items
         self.item_weights = item_weights
+        self.sum_weights = [0]*size
 
         w = 0
         for i in range(size):
