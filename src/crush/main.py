@@ -21,13 +21,9 @@ def buckettype_to_number(buckettype):
     else:
         return 0
 
-def main():
-    '''
-    build a CRUSH map with 100 osds
-    '''
-    num_osds = 100
+def build_crush_map(num_osds, fn):
     layers = []
-    f = open('layers.txt', 'r')
+    f = open(fn, 'r')
     for line in f:
         layer = []
         tmp = line.split()
@@ -108,8 +104,15 @@ def main():
     rule.add_rule_step(rule_step2)
     rule.add_rule_step(rule_step3)
     crush.finalize()
-    print 'done!'
+    return crush
 
+def main():
+    '''
+    build a CRUSH map with 100 osds
+    '''
+    num_osds = 100
+    crush = build_crush_map(num_osds, 'layers.txt')
+    print 'done!'
 
 if __name__ == '__main__':
     main()
