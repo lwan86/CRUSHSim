@@ -103,6 +103,7 @@ def build_crush_map(num_osds, fn):
     rule.add_rule_step(rule_step1)
     rule.add_rule_step(rule_step2)
     rule.add_rule_step(rule_step3)
+    crush.add_rule(rule, -1)
     crush.finalize()
     return crush
 
