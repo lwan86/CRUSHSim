@@ -1,3 +1,0 @@
-cab uniform 24
-row tree 4 
-pool list 2

@@ -6,7 +6,7 @@ Created on Nov 19, 2013
 
 class CrushBucket():
     '''
-    classdocs
+    class for crush bucket
     '''
 
     def __init__(self):
@@ -69,7 +69,7 @@ class CrushBucket():
 
 class UniformCrushBucket(CrushBucket):
     '''
-    classdocs
+    class for uniform bucket
     '''
 
     def __init__(self):
@@ -87,9 +87,11 @@ class UniformCrushBucket(CrushBucket):
         self.weight = size*item_weight
         self.item_weight = item_weight
         self.items = items
+        self.perm = [None]*size
 
     def add_bucket_item(self, item, weight):
         self.items.append(item)
+        self.perm.append(None)
         self.weight += weight
         self.size += 1
 
@@ -114,7 +116,7 @@ class UniformCrushBucket(CrushBucket):
 
 class ListCrushBucket(CrushBucket):
     '''
-    classdocs
+    class for list bucket
     '''
 
     def __init__(self):
@@ -133,6 +135,7 @@ class ListCrushBucket(CrushBucket):
         self.items = items
         self.item_weights = item_weights
         self.sum_weights = [0]*size
+        self.perm = [None]*size
 
         w = 0
         for i in range(size):
@@ -144,6 +147,7 @@ class ListCrushBucket(CrushBucket):
     def add_bucket_item(self, item, weight):
         self.items.append(item)
         self.item_weights.append(weight)
+        self.perm.append(None)
         if self.size > 0:
             self.sum_weights.append(self.sum_weights[self.size-1]+weight)
         else:
@@ -195,7 +199,7 @@ class ListCrushBucket(CrushBucket):
 
 class TreeCrushBucket(CrushBucket):
     '''
-    classdocs
+    class for tree bucket
     '''
 
     def __init__(self):
@@ -255,6 +259,7 @@ class TreeCrushBucket(CrushBucket):
         self.num_nodes = 1 << depth
         self.items = items
         self.node_weights = [0]*self.num_nodes
+        self.perm = [None]*size
 
         for i in range(size):
             node_id = self.get_node_index(i)
@@ -275,6 +280,7 @@ class TreeCrushBucket(CrushBucket):
             new_node_id = self.get_parent_node(new_node_id)
             self.node_weights[new_node_id] += weight
 
+        self.perm.append(None)
         self.weight += weight
         self.size += 1
 
@@ -342,7 +348,7 @@ class TreeCrushBucket(CrushBucket):
 
 class StrawCrushBucket(CrushBucket):
     '''
-    classdocs
+    class for straw bucket
     '''
 
     def __init__(self):
@@ -354,7 +360,7 @@ class StrawCrushBucket(CrushBucket):
         return self.item_weights[pos]
 
     def set_staw_value(self, size, item_weights):
-        sorted_weights_idx = []
+        sorted_weights_idx = [None]*size
         if size:
             sorted_weights_idx[0] = 0
         for i in range(1, size):
@@ -364,7 +370,7 @@ class StrawCrushBucket(CrushBucket):
                         sorted_weights_idx[k] = sorted_weights_idx[k-1]
                     sorted_weights_idx[j] = i
                     break
-            if j == i:
+            if j+1 == i:
                 sorted_weights_idx[i] = i
 
         left_weights_num = size
@@ -405,6 +411,8 @@ class StrawCrushBucket(CrushBucket):
         self.size = size
         self.items = items
         self.item_weights = item_weights
+        self.straws = [None]*size
+        self.perm = [None]*size
 
         for i in range(size):
             self.weight += item_weights[i]
@@ -414,6 +422,7 @@ class StrawCrushBucket(CrushBucket):
     def add_bucket_item(self, item, weight):
         self.items.append(item)
         self.item_weights.append(weight)
+        self.perm.append(None)
         self.weight += weight
         self.size += 1
 

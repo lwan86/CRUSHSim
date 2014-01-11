@@ -1,3 +1,4 @@
-cab uniform 24
-row tree 4
+cab straw 24
+row tree 3
 pool list 2
+datacenter uniform 2

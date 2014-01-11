@@ -6,7 +6,7 @@ Created on Nov 25, 2013
 
 class CrushRuleStep():
     '''
-    classdocs
+    class for crush rule step
     '''
 
     def __init__(self):
@@ -22,7 +22,7 @@ class CrushRuleStep():
 
 class CrushRuleMask():
     '''
-    classdocs
+    class for crush rule mask
     '''
 
     def __init__(self):
@@ -40,7 +40,7 @@ class CrushRuleMask():
 
 class CrushRule():
     '''
-    classdocs
+    class for crush rule
     '''
 
     def __init__(self):

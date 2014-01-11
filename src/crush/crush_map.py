@@ -7,7 +7,7 @@ from copy import deepcopy
 
 class CrushMap():
     '''
-    classdocs
+    class for crush map
     '''
 
     def __init__(self):
@@ -25,7 +25,7 @@ class CrushMap():
         self.num_local_fallback_tries = 5
         self.num_total_tries = 19
         self.leaf_descend_once = 0
-        self.tries = []
+        self.tries = [0]*(self.num_total_tries+1)
 
     def add_rule(self, crush_rule, rule_id):
         if rule_id < 0:
@@ -40,10 +40,15 @@ class CrushMap():
 
     def get_next_bucket_id(self):
         pos = 0
+        flag = False
         for pos in range(self.max_buckets):
-            if not self.crush_buckets or self.crush_buckets[pos] == 0:
+            if not self.crush_buckets or self.crush_buckets[pos] == None:
+                flag = True
                 break
-        return -1-pos
+        if flag:
+            return -1-pos
+        else:
+            return -1-(pos+1)
 
     def add_bucket(self, crush_bucket, bucket_id):
         if bucket_id == 0:
@@ -56,7 +61,7 @@ class CrushMap():
             else:
                 self.max_buckets = 8
             for i in range(old_size, self.max_buckets):
-                self.crush_buckets.append(0)
+                self.crush_buckets.append(None)
         crush_bucket.id = bucket_id
         self.crush_buckets[pos] = crush_bucket
         return bucket_id
@@ -73,10 +78,24 @@ class CrushMap():
                 return i
         return -1
 
+    def item_exists(self, id):
+        found = False
+        for i in range(self.max_buckets):
+            b = self.crush_buckets[i]
+            if b == None:
+                continue
+            for j in range(b.size):
+                if b.items[j] == id:
+                    found = True
+        return found
+
     def finalize(self):
+        '''
+        can only be called after the crush map has been built
+        '''
         self.max_devices = 0
         for i in range(self.max_buckets):
-            if self.crush_buckets[i] == 0:
+            if self.crush_buckets[i] == None:
                 continue
             for j in range(self.crush_buckets[i].size):
                 if self.crush_buckets[i].items[j] >= self.max_devices:
@@ -138,6 +157,10 @@ class CrushMap():
     def choose_first_n_items(self, crush_bucket, weight, weight_max, x, num_replicas, type, out, outpos, tries, recurse_tries, local_tries, local_fallback_tries, recurse_to_leaf, out2):
         out3 = out
         out4 = out2
+        #print '1st out3: '+str(out3)
+        #print '1st out4: '+str(out4)
+        #if out3 == None and outpos >= 0:
+        #    print 'stop!'
         for rep in range(outpos, num_replicas):
             ftotal = 0
             skip_rep = 0
@@ -157,6 +180,7 @@ class CrushMap():
                             item = input_bucket.choose_item_by_rand_perm(x, r)
                         else:
                             item = input_bucket.choose_item(x, r)
+                        #print 'item: '+str(item)
                         if item >= self.max_devices:
                             skip_rep = 1
                             break
@@ -172,17 +196,27 @@ class CrushMap():
                             retry_bucket = 1
                             continue
                         for i in range(outpos):
+                            #print '2nd out3: '+str(out3)
+                            #print 'item: '+str(item)
                             if out3[i] == item:
                                 collide = 1
                                 break
                         reject = 0
                         if not collide and recurse_to_leaf:
                             if item < 0:
-                                if self.choose_first_n_items(self.crush_buckets[-1-item], weight, weight_max, x, outpos+1, 0, out4, outpos, recurse_tries, 0, local_tries, local_fallback_tries, 0, None)[0] <= outpos:
-                                    out4 = self.choose_first_n_items(self.crush_buckets[-1-item], weight, weight_max, x, outpos+1, 0, out4, outpos, recurse_tries, 0, local_tries, local_fallback_tries, 0, None)[2]
+                                #if outpos > 0:
+                                #    print 'stop!'
+                                #print '2nd out4: '+str(out4)
+                                res = self.choose_first_n_items(self.crush_buckets[-1-item], weight, weight_max, x, outpos+1, 0, out4, outpos, recurse_tries, 0, local_tries, local_fallback_tries, 0, None)
+                                if res[0] <= outpos:
+                                    #print '3rd out4: '+str(out4)
+                                    out4 = res[1]
+                                    #print '4th out4: '+str(out4)
                                     reject = 1
-                                else:
-                                    out4[outpos] = item
+                            else:
+                                #print '6th out4: '+str(out4)
+                                out4[outpos] = item
+                                #print '7th out4: '+str(out4)
                         if not reject:
                             if item_type == 0:
                                 reject = self.item_is_out(weight, weight_max, item, x)
@@ -203,22 +237,25 @@ class CrushMap():
                         break
                 if not retry_descent:
                     break
-                if skip_rep:
-                    continue
-                out3[outpos] = item
-                outpos += 1
-                if self.tries and ftotal <= self.num_total_tries:
-                    self.tries[ftotal] += 1
-            return [outpos, out3, out4]
+            if skip_rep:
+                continue
+            #print '3rd out3: '+str(out3)
+            #print 'item: '+str(item)
+            out3[outpos] = item
+            #print '4th out3: '+str(out3)
+            outpos += 1
+            if self.tries and ftotal <= self.num_total_tries:
+                self.tries[ftotal] += 1
+        return [outpos, out3, out4]
 
-    def get_map_using_rule(self, rule_id, x, weight, weight_max, result, result_max):
+    def get_mapping_using_rule(self, rule_id, x, weight, weight_max, result, result_max):
         total_tries = self.num_total_tries
         local_tries = self.num_local_tries
         local_fallback_tries = self.num_local_fallback_tries
         leaf_tries = 0
-        w = [0]*result_max
-        o = [0]*result_max
-        c = [0]*result_max
+        w = [None]*result_max
+        o = [None]*result_max
+        c = [None]*result_max
         res = result
         if rule_id >= self.max_rules:
             print 'bad rule id!'
@@ -250,7 +287,7 @@ class CrushMap():
             elif self.crush_rules[rule_id].rule_steps[step].op == 2 or self.crush_rules[rule_id].rule_steps[step].op == 6:
                 first_n = 1
                 if w_size == 0:
-                    break
+                    continue
                 recurse_to_leaf = self.crush_rules[rule_id].rule_steps[step].op == 6
                 o_size = 0
                 for i in range(w_size):
@@ -267,10 +304,13 @@ class CrushMap():
                             recurse_tries = 1
                         else:
                             recurse_tries = total_tries
+                        #print 'o: '+str(o)
+                        #print 'o_size: '+str(o_size)
+                        #print 'o[o_size:len(o)]: '+str(o[o_size:len(o)])
                         ret = self.choose_first_n_items(self.crush_buckets[-1-w[i]], weight, weight_max, x, num_replicas, self.crush_rules[rule_id].rule_steps[step].arg2, o[o_size:len(o)], j, total_tries, recurse_tries, local_tries, local_fallback_tries, recurse_to_leaf, c[o_size:len(c)])
-                        o_size = ret[0]
                         o[o_size:len(o)] = ret[1]
                         c[o_size:len(c)] = ret[2]
+                        o_size += ret[0]
                 if recurse_to_leaf:
                     o = deepcopy(c)
                 tmp = deepcopy(o)
